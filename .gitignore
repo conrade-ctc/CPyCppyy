@@ -14,4 +14,4 @@ __pycache__
 .cache
 .pytest_cache
 .vscode
-build
+build*
