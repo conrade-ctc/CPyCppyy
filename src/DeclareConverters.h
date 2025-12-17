@@ -20,14 +20,14 @@ public:                                                                      \
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;      \
     PyObject* FromMemory(void*) override;                                     \
     bool ToMemory(PyObject*, void*, PyObject* = nullptr) override;            \
-    virtual std::string GetFailureMsg() { return "[" #name "Converter]"; }   \
+    virtual std::string GetFailureMsg() override { return "[" #name "Converter]"; }   \
 };                                                                           \
                                                                              \
 class Const##name##RefConverter : public Converter {                         \
 public:                                                                      \
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;      \
     PyObject* FromMemory(void*) override;                                     \
-    virtual std::string GetFailureMsg() { return "[Const" #name "RefConverter]"; }\
+    virtual std::string GetFailureMsg() override { return "[Const" #name "RefConverter]"; }\
 }
 
 
@@ -36,14 +36,14 @@ class name##Converter : public base##Converter {                             \
 public:                                                                      \
     PyObject* FromMemory(void*) override;                                     \
     bool ToMemory(PyObject*, void*, PyObject* = nullptr) override;            \
-    virtual std::string GetFailureMsg() { return "[" #name "Converter]"; }   \
+    virtual std::string GetFailureMsg() override { return "[" #name "Converter]"; }   \
 };                                                                           \
                                                                              \
 class Const##name##RefConverter : public Converter {                         \
 public:                                                                      \
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;      \
     PyObject* FromMemory(void*) override;                                     \
-    virtual std::string GetFailureMsg() { return "[Const" #name "RefConverter]"; }\
+    virtual std::string GetFailureMsg() override { return "[Const" #name "RefConverter]"; }\
 }
 
 #define CPPYY_DECLARE_REFCONVERTER(name)                                     \
@@ -51,7 +51,7 @@ class name##RefConverter : public Converter {                                \
 public:                                                                      \
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;      \
     PyObject* FromMemory(void*) override;                                     \
-    virtual std::string GetFailureMsg() { return "[" #name "RefConverter]"; }\
+    virtual std::string GetFailureMsg() override { return "[" #name "RefConverter]"; }\
 };
 
 #define CPPYY_DECLARE_ARRAY_CONVERTER(name)                                  \
@@ -63,8 +63,8 @@ public:                                                                      \
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;      \
     PyObject* FromMemory(void*) override;                                     \
     bool ToMemory(PyObject*, void*, PyObject* = nullptr) override;            \
-    bool HasState() { return true; }                                 \
-    virtual std::string GetFailureMsg() { return "[" #name "ArrayConverter]"; }\
+    bool HasState() override { return true; }                                 \
+    virtual std::string GetFailureMsg() override { return "[" #name "ArrayConverter]"; }\
 protected:                                                                   \
     dims_t fShape;                                                           \
     bool fIsFixed;                                                           \
@@ -137,7 +137,7 @@ public:
     PyObject* FromMemory(void* address) override;
     bool ToMemory(PyObject* value, void* address, PyObject* = nullptr) override;
     bool HasState() override { return true; }
-    virtual std::string GetFailureMsg() { return "[CStringConverter]"; }
+    virtual std::string GetFailureMsg() override { return "[CStringConverter]"; }
 
 protected:
     std::string fBuffer;
@@ -151,7 +151,7 @@ public:
 public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
     PyObject* FromMemory(void* address) override;
-    virtual std::string GetFailureMsg() { return "[NonConstCStringConverter]"; }
+    virtual std::string GetFailureMsg() override { return "[NonConstCStringConverter]"; }
 };
 
 class WCStringConverter : public Converter {
@@ -167,7 +167,7 @@ public:
     PyObject* FromMemory(void* address) override;
     bool ToMemory(PyObject* value, void* address, PyObject* = nullptr) override;
     bool HasState() override { return true; }
-    virtual std::string GetFailureMsg() { return "[WCStringConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[WCStringConverter]"; };
 
 protected:
     wchar_t* fBuffer;
@@ -187,7 +187,7 @@ public:
     PyObject* FromMemory(void* address) override;
     bool ToMemory(PyObject* value, void* address, PyObject* = nullptr) override;
     bool HasState() override { return true; }
-    virtual std::string GetFailureMsg() { return "[CString16Converter]"; };
+    virtual std::string GetFailureMsg() override { return "[CString16Converter]"; };
 
 protected:
     char16_t* fBuffer;
@@ -207,7 +207,7 @@ public:
     PyObject* FromMemory(void* address) override;
     bool ToMemory(PyObject* value, void* address, PyObject* = nullptr) override;
     bool HasState() override { return true; }
-    virtual std::string GetFailureMsg() { return "[CString32Converter]"; };
+    virtual std::string GetFailureMsg() override { return "[CString32Converter]"; };
 
 protected:
     char32_t* fBuffer;
@@ -243,7 +243,7 @@ public:
     using SCharArrayConverter::SCharArrayConverter;
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
     PyObject* FromMemory(void* address) override;
-    virtual std::string GetFailureMsg() { return "[CStringArrayConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[CStringArrayConverter]"; };
 
 private:
     std::vector<const char*> fBuffer;
@@ -253,7 +253,7 @@ class NonConstCStringArrayConverter : public CStringArrayConverter {
 public:
     using CStringArrayConverter::CStringArrayConverter;
     PyObject* FromMemory(void* address) override;
-    virtual std::string GetFailureMsg() { return "[NonConstCStringArrayConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[NonConstCStringArrayConverter]"; };
 };
 
 // converters for special cases
@@ -268,7 +268,7 @@ public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
     PyObject* FromMemory(void*) override;
     bool ToMemory(PyObject*, void*, PyObject* = nullptr) override;
-    virtual std::string GetFailureMsg() { return "[InstanceConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[InstanceConverter]"; };
 };
 
 class InstanceRefConverter : public Converter  {
@@ -280,7 +280,7 @@ public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
     PyObject* FromMemory(void* address) override;
     bool HasState() override { return true; }
-    virtual std::string GetFailureMsg() { return "[InstanceRefConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[InstanceRefConverter]"; };
 
 protected:
     Cppyy::TCppType_t fClass;
@@ -291,7 +291,7 @@ class InstanceMoveConverter : public InstanceRefConverter  {
 public:
     InstanceMoveConverter(Cppyy::TCppType_t klass) : InstanceRefConverter(klass, true) {}
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
-    virtual std::string GetFailureMsg() { return "[InstanceMoveConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[InstanceMoveConverter]"; };
 };
 
 template <bool ISREFERENCE>
@@ -303,7 +303,7 @@ public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
     PyObject* FromMemory(void* address) override;
     bool ToMemory(PyObject* value, void* address, PyObject* = nullptr) override;
-    virtual std::string GetFailureMsg() { return "[InstancePtrPtrConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[InstancePtrPtrConverter]"; };
 };
 
 class InstanceArrayConverter : public InstancePtrConverter<false> {
@@ -317,7 +317,7 @@ public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
     PyObject* FromMemory(void* address) override;
     bool ToMemory(PyObject* value, void* address, PyObject* = nullptr) override;
-    virtual std::string GetFailureMsg() { return "[InstanceArrayConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[InstanceArrayConverter]"; };
 
 protected:
     dims_t fShape;
@@ -333,7 +333,7 @@ public:
     PyObject* FromMemory(void* address) override;
     bool ToMemory(PyObject* value, void* address, PyObject* = nullptr) override;
     bool HasState() override { return true; }
-    virtual std::string GetFailureMsg() { return "[ComplexDConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[ComplexDConverter]"; };
 
 private:
     std::complex<double> fBuffer;
@@ -345,7 +345,7 @@ private:
 class STLIteratorConverter : public Converter {
 public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
-    virtual std::string GetFailureMsg() { return "[STLIteratorConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[STLIteratorConverter]"; };
 };
 // -- END CLING WORKAROUND
 
@@ -353,7 +353,7 @@ public:
 class VoidPtrRefConverter : public Converter {
 public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
-    virtual std::string GetFailureMsg() { return "[VoidPtrRefConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[VoidPtrRefConverter]"; };
 };
 
 class VoidPtrPtrConverter : public Converter {
@@ -362,7 +362,7 @@ public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
     PyObject* FromMemory(void* address) override;
     bool HasState() override { return true; }
-    virtual std::string GetFailureMsg() { return "[VoidPtrPtrConverter] " + fFailureMsg; }
+    virtual std::string GetFailureMsg() override { return "[VoidPtrPtrConverter] " + fFailureMsg; }
 
 protected:
     dims_t fShape;
@@ -383,7 +383,7 @@ public:                                                                      \
     PyObject* FromMemory(void* address) override;                             \
     bool ToMemory(PyObject*, void*, PyObject* = nullptr) override;            \
     bool HasState() override { return true; }                                 \
-    virtual std::string GetFailureMsg() { return "[" #name "Converter]"; };  \
+    virtual std::string GetFailureMsg() override { return "[" #name "Converter]"; };  \
 protected:                                                                   \
     strtype fBuffer;                                                         \
 }
@@ -398,7 +398,7 @@ public:
 
 public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
-    virtual std::string GetFailureMsg() { return "[STLStringMoveConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[STLStringMoveConverter]"; };
 };
 
 
@@ -413,7 +413,7 @@ public:
     PyObject* FromMemory(void* address) override;
     bool ToMemory(PyObject*, void*, PyObject* = nullptr) override;
     bool HasState() override { return true; }
-    virtual std::string GetFailureMsg() { return "[FunctionPointerConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[FunctionPointerConverter]"; };
 
 protected:
     std::string fRetType;
@@ -436,7 +436,7 @@ public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
     PyObject* FromMemory(void* address) override;
     bool ToMemory(PyObject* value, void* address, PyObject* = nullptr) override;
-    virtual std::string GetFailureMsg() { return "[StdFunctionConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[StdFunctionConverter]"; };
 
 protected:
     Converter* fConverter;
@@ -458,7 +458,7 @@ public:
     PyObject* FromMemory(void* address) override;
     bool ToMemory(PyObject*, void*, PyObject* = nullptr) override;
     bool HasState() override { return true; }
-    virtual std::string GetFailureMsg() { return "[SmartPtrConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[SmartPtrConverter]"; };
 
 protected:
     virtual bool GetAddressSpecialCase(PyObject*, void*&) { return false; }
@@ -481,7 +481,7 @@ public:
 public:
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
     bool HasState() override { return true; }
-    virtual std::string GetFailureMsg() { return "[FunctionPointerConverter]"; };
+    virtual std::string GetFailureMsg() override { return "[FunctionPointerConverter]"; };
 
 protected:
     void Clear();
@@ -500,7 +500,7 @@ class NotImplementedConverter : public Converter {
 public:
     NotImplementedConverter(const std::string &failureMsg = std::string()) : fFailureMsg{failureMsg} {}
     bool SetArg(PyObject*, Parameter&, CallContext* = nullptr) override;
-    virtual std::string GetFailureMsg() { return "[NotImplementedConverter] " + fFailureMsg; }
+    virtual std::string GetFailureMsg() override { return "[NotImplementedConverter] " + fFailureMsg; }
 protected:
     const std::string fFailureMsg;
 };
