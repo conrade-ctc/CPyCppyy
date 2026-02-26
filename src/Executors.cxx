@@ -1,3 +1,4 @@
+// clang-format off
 // Bindings
 #include "CPyCppyy.h"
 #include "Cppyy.h"
@@ -17,6 +18,15 @@
 #include <utility>
 #include <sys/types.h>
 #include <complex>
+
+#include <iostream>
+struct OSS {
+    std::string l;
+    std::ostringstream s;
+    OSS(const std::string &l_) : l{l_} {(*this)();}
+    std::ostringstream &operator()() { s << std::endl << l << ":" ; return s; }
+    ~OSS() {std::cerr << s.str() << std::endl;}
+};
 
 
 //- data _____________________________________________________________________
@@ -81,6 +91,10 @@ CPPYY_IMPL_GILCALL(void*,          R)
 static inline Cppyy::TCppObject_t GILCallO(Cppyy::TCppMethod_t method,
     Cppyy::TCppObject_t self, CPyCppyy::CallContext* ctxt, Cppyy::TCppScope_t klass)
 {
+    OSS oss{"GILCall0"};
+    std::string methodName = Cppyy::GetMethodFullName(method);
+    oss() << "methodName=" << methodName;
+
     Cppyy::TCppType_t klass_ty = Cppyy::GetTypeFromScope(klass);
 #ifdef WITH_THREAD
     if (!ReleasesGIL(ctxt))
@@ -95,6 +109,9 @@ static inline Cppyy::TCppObject_t GILCallO(Cppyy::TCppMethod_t method,
 static inline Cppyy::TCppObject_t GILCallConstructor(
     Cppyy::TCppMethod_t method, Cppyy::TCppScope_t klass, CPyCppyy::CallContext* ctxt)
 {
+    OSS oss{"GILCallConstructor"};
+    std::string methodName = Cppyy::GetMethodFullName(method);
+    oss() << "methodName=" << methodName;
 #ifdef WITH_THREAD
     if (!ReleasesGIL(ctxt))
 #endif
@@ -615,8 +632,12 @@ CPyCppyy::InstanceExecutor::InstanceExecutor(Cppyy::TCppScope_t klass) :
 PyObject* CPyCppyy::InstanceExecutor::Execute(
     Cppyy::TCppMethod_t method, Cppyy::TCppObject_t self, CallContext* ctxt)
 {
+    OSS oss{"InstanceExecutor::Execute"};
+
 // execution will bring a temporary in existence
     Cppyy::TCppObject_t value = GILCallO(method, self, ctxt, fClass);
+
+    oss() << "value=" << value;
 
     if (!value) {
         if (!PyErr_Occurred())         // callee may have set a python error itself
@@ -626,6 +647,7 @@ PyObject* CPyCppyy::InstanceExecutor::Execute(
 
 // the result can then be bound
     PyObject* pyobj = BindCppObjectNoCast(value, fClass, fFlags);
+    oss() << "pyobj=" << (void*)pyobj;
     if (!pyobj)
         return nullptr;
 
@@ -647,6 +669,8 @@ CPyCppyy::IteratorExecutor::IteratorExecutor(Cppyy::TCppScope_t klass) :
 PyObject* CPyCppyy::InstanceRefExecutor::Execute(
     Cppyy::TCppMethod_t method, Cppyy::TCppObject_t self, CallContext* ctxt)
 {
+    OSS oss{"InstanceRefExecutor::Execute"};
+
 // executor binds the result to the left-hand side, overwriting if an old object
     PyObject* result = BindCppObject((void*)GILCallR(method, self, ctxt), fClass);
     if (!result || !fAssignable)
@@ -699,6 +723,8 @@ static inline PyObject* SetInstanceCheckError(PyObject* pyobj) {
 PyObject* CPyCppyy::InstancePtrPtrExecutor::Execute(
     Cppyy::TCppMethod_t method, Cppyy::TCppObject_t self, CallContext* ctxt)
 {
+    OSS oss{"InstancePtrPtrExecutor::Execute"};
+
 // execute <method> with argument <self, ctxt>, construct python C++ proxy object
 // return ptr value
     if (fAssignable && !CPPInstance_Check(fAssignable))
@@ -722,6 +748,8 @@ PyObject* CPyCppyy::InstancePtrPtrExecutor::Execute(
 PyObject* CPyCppyy::InstancePtrRefExecutor::Execute(
     Cppyy::TCppMethod_t method, Cppyy::TCppObject_t self, CallContext* ctxt)
 {
+    OSS oss{"InstancePtrRefExecutor::Execute"};
+
 // execute <method> with argument <self, ctxt>, construct python C++ proxy object
 // ignoring ref) return ptr value
     if (fAssignable && !CPPInstance_Check(fAssignable))
@@ -754,6 +782,7 @@ PyObject* CPyCppyy::InstanceArrayExecutor::Execute(
 PyObject* CPyCppyy::ConstructorExecutor::Execute(
     Cppyy::TCppMethod_t method, Cppyy::TCppObject_t klass, CallContext* ctxt)
 {
+    OSS oss{"ConstructorExecutor::Execute"};
 // package return address in PyObject* for caller to handle appropriately (see
 // CPPConstructor for the actual build of the PyObject)
     return (PyObject*)GILCallConstructor(method, (Cppyy::TCppScope_t)klass, ctxt);
@@ -763,6 +792,7 @@ PyObject* CPyCppyy::ConstructorExecutor::Execute(
 PyObject* CPyCppyy::PyObjectExecutor::Execute(
     Cppyy::TCppMethod_t method, Cppyy::TCppObject_t self, CallContext* ctxt)
 {
+    OSS oss{"PyObjectExecutor::Execute"};
 // execute <method> with argument <self, ctxt>, return python object
     return (PyObject*)GILCallR(method, self, ctxt);
 }
@@ -786,6 +816,8 @@ PyObject* CPyCppyy::FunctionPointerExecutor::Execute(
 //- factories ----------------------------------------------------------------
 CPyCppyy::Executor* CPyCppyy::CreateExecutor(const std::string& fullType, cdims_t dims)
 {
+    OSS oss{"CreateExecutorS=" + fullType};
+
 // The matching of the fulltype to an executor factory goes through up to 4 levels:
 //   1) full, qualified match
 //   2) drop '&' as by ref/full type is often pretty much the same python-wise
@@ -799,11 +831,14 @@ CPyCppyy::Executor* CPyCppyy::CreateExecutor(const std::string& fullType, cdims_
 
 // an exactly matching executor is best
     ExecFactories_t::iterator h = gExecFactories.find(fullType);
-    if (h != gExecFactories.end())
+    if (h != gExecFactories.end()) {
+        oss() << "exact=" << dims;
         return (h->second)(dims);
+    }
 
 // resolve typedefs etc.
     const std::string resolvedType = Cppyy::ResolveName(fullType);
+    oss() << "resolvedType=" << resolvedType;
 
 // a full, qualified matching executor is preferred
     if (resolvedType != fullType) {
@@ -815,7 +850,9 @@ CPyCppyy::Executor* CPyCppyy::CreateExecutor(const std::string& fullType, cdims_
 //-- nothing? ok, collect information about the type and possible qualifiers/decorators
     bool isConst = strncmp(resolvedType.c_str(), "const", 5)  == 0;
     const std::string& cpd = TypeManip::compound(resolvedType);
+    oss() << "cpd=" << cpd;
     std::string realType = TypeManip::clean_type(resolvedType, false);
+    oss() << "realType=" << realType;
 
 // accept unqualified type (as python does not know about qualifiers)
     h = gExecFactories.find(realType + cpd);
@@ -826,6 +863,7 @@ CPyCppyy::Executor* CPyCppyy::CreateExecutor(const std::string& fullType, cdims_
 // of c-strings, but those are specialized in the converter map)
     if (isConst) {
         realType = TypeManip::remove_const(realType);
+        oss() << "realType=" << realType;
         h = gExecFactories.find(realType + cpd);
         if (h != gExecFactories.end())
             return (h->second)(dims);
@@ -887,6 +925,8 @@ CPyCppyy::Executor* CPyCppyy::CreateExecutor(const std::string& fullType, cdims_
     // executor factory available, use it to create executor
         result = (h->second)(dims);
 
+   oss() << "address=" << std::showbase << std::hex << result;
+
    return result;                  // may still be null
 }
 
@@ -901,13 +941,19 @@ CPyCppyy::Executor* CPyCppyy::CreateExecutor(Cppyy::TCppType_t type, cdims_t dim
 // If all fails, void is used, which will cause the return type to be ignored on use
 
 // an exactly matching executor is best
+    OSS oss{"CreateExecutorT"};
+    oss() << "type=" << (void*)type;
     std::string fullType = Cppyy::GetTypeAsString(type);
+    oss() << "fullType=" << fullType;
     if (fullType.size() >= 2 && fullType.compare(fullType.size() - 2, 2, " &") == 0)
         fullType = fullType.substr(0, fullType.size() - 2) + "&";
+    oss() << "fullType=" << fullType;
 
     ExecFactories_t::iterator h = gExecFactories.find(fullType);
-    if (h != gExecFactories.end())
+    if (h != gExecFactories.end()) {
+        oss() << "exact1=" << dims;
         return (h->second)(dims);
+    }
 
 // resolve typedefs etc.
     Cppyy::TCppType_t resolvedType = Cppyy::ResolveType(type);
@@ -926,12 +972,15 @@ CPyCppyy::Executor* CPyCppyy::CreateExecutor(Cppyy::TCppType_t type, cdims_t dim
         if (resolvedTypeStr.rfind("(void)") != std::string::npos)
             resolvedTypeStr = resolvedTypeStr.substr(0, resolvedTypeStr.size() - 6) + "()";
     }
+    oss() << "resolvedType=" << resolvedTypeStr;
 
 // a full, qualified matching executor is preferred
     if (resolvedTypeStr != fullType) {
-         h = gExecFactories.find(resolvedTypeStr);
-         if (h != gExecFactories.end())
-              return (h->second)(dims);
+        h = gExecFactories.find(resolvedTypeStr);
+        if (h != gExecFactories.end()) {
+            oss() << "exact2=" << dims;
+            return (h->second)(dims);
+        }
     }
 
 //-- nothing? ok, collect information about the type and possible qualifiers/decorators
@@ -940,19 +989,24 @@ CPyCppyy::Executor* CPyCppyy::CreateExecutor(Cppyy::TCppType_t type, cdims_t dim
     Cppyy::TCppType_t realType = Cppyy::IsFunctionPointerType(resolvedType) ? resolvedType : Cppyy::GetRealType(resolvedType);
     std::string realTypeStr = Cppyy::IsFunctionPointerType(resolvedType) ? resolvedTypeStr : Cppyy::GetTypeAsString(realType);
     const std::string compounded = cpd.empty() ? realTypeStr : realTypeStr + cpd;
+    oss() << "compounded=" << compounded;
 
 // accept unqualified type (as python does not know about qualifiers)
     h = gExecFactories.find(compounded);
-    if (h != gExecFactories.end())
+    if (h != gExecFactories.end()) {
+        oss() << "exact3=" << dims;
         return (h->second)(dims);
+    }
 
 // drop const, as that is mostly meaningless to python (with the exception
 // of c-strings, but those are specialized in the converter map)
     if (isConst) {
         realTypeStr = TypeManip::remove_const(realTypeStr);
         h = gExecFactories.find(compounded);
-        if (h != gExecFactories.end())
+        if (h != gExecFactories.end()) {
+            oss() << "exact4=" << dims;
             return (h->second)(dims);
+        }
     }
 
 // simple array types
@@ -1011,6 +1065,8 @@ CPyCppyy::Executor* CPyCppyy::CreateExecutor(Cppyy::TCppType_t type, cdims_t dim
     if (!result && h != gExecFactories.end())
     // executor factory available, use it to create executor
         result = (h->second)(dims);
+
+   oss() << "address=" << std::showbase << std::hex << result;
 
    return result;                  // may still be null
 }
@@ -1217,6 +1273,7 @@ public:
         gf[WSTRING1] =                      gf["std::basic_string<wchar_t>"];
         gf[WSTRING2] =                      gf["std::basic_string<wchar_t>"];
         gf["__init__"] =                    (ef_t)+[](cdims_t) { static ConstructorExecutor e{}; return &e; };
+        //gf["__init__"] =                    (ef_t)+[](cdims_t) { return new ConstructorExecutor {}; };
         gf["PyObject*"] =                   (ef_t)+[](cdims_t) { static PyObjectExecutor e{};    return &e; };
         gf["_object*"] =                    gf["PyObject*"];
         gf["FILE*"] =                       gf["void ptr"];
@@ -1224,3 +1281,5 @@ public:
 } initExecvFactories_;
 
 } // unnamed namespace
+
+// clang-format off

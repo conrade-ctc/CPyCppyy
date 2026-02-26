@@ -1,3 +1,4 @@
+// clang-format off
 // Bindings
 #include "CPyCppyy.h"
 #include "CPPConstructor.h"
@@ -10,6 +11,17 @@
 // Standard
 #include <memory>
 #include <string>
+#include <iostream>
+#include <sstream>
+
+#include <iostream>
+struct OSS {
+    std::string l;
+    std::ostringstream s;
+    OSS(const std::string &l_) : l{l_} {(*this)();}
+    std::ostringstream &operator()() { s << std::endl << l << ":" ; return s; }
+    ~OSS() {std::cerr << s.str() << std::endl;}
+};
 
 
 //- data _____________________________________________________________________
@@ -58,6 +70,11 @@ PyObject* CPyCppyy::CPPConstructor::Reflex(
 PyObject* CPyCppyy::CPPConstructor::Call(CPPInstance*& self,
     CPyCppyy_PyArgs_t args, size_t nargsf, PyObject* kwds, CallContext* ctxt)
 {
+    OSS oss{"CPPConstructor::Call"};
+    oss() << GetScope();
+    std::string fullType = Cppyy::GetTypeAsString(Cppyy::GetTypeFromScope(GetScope()));
+    oss() << "fullType=" << fullType;
+
 // setup as necessary
     if (fArgsRequired == -1 && !this->Initialize(ctxt))
         return nullptr;                     // important: 0, not Py_None
@@ -84,12 +101,14 @@ PyObject* CPyCppyy::CPPConstructor::Call(CPPInstance*& self,
         ctxt->fPyContext = (PyObject*)cargs.fSelf;    // no Py_INCREF as no ownership
 
 // perform the call, nullptr 'this' makes the other side allocate the memory
-    Cppyy::TCppScope_t disp = self->ObjectIsA(false /* check_smart */);
+    Cppyy::TCppScope_t disp = self->ObjectIsA(true  /* check_smart */);
+    oss() << "disp=" << disp;
     intptr_t address = 0;
     if (GetScope() != disp) {
     // happens for Python derived types (which have a dispatcher inserted that
     // is not otherwise user-visible: call it instead) and C++ derived classes
     // without public constructors
+        oss() << "1";
 
     // first, check whether we at least had a proper meta class, or whether that
     // was also replaced user-side
@@ -125,14 +144,20 @@ PyObject* CPyCppyy::CPPConstructor::Call(CPPInstance*& self,
         }
         Py_DECREF(dispproxy);
 
+        oss() << "2=" << std::showbase << std::hex << address;
     } else {
     // translate the arguments
+        oss() << "3=" << std::showbase << std::hex << ctxt->fFlags;
         if (((CPPClass*)Py_TYPE(self))->fFlags & CPPScope::kNoImplicit)
             ctxt->fFlags |= CallContext::kNoImplicit;
+        //ctxt->fFlags &= ~CallContext::kAllowImplicit;
+        oss() << "4=" << std::showbase << std::hex << ctxt->fFlags;
         if (!this->ConvertAndSetArgs(cargs.fArgs, cargs.fNArgsf, ctxt))
             return nullptr;
 
         address = (intptr_t)this->Execute(nullptr, 0, ctxt);
+        oss() << "5=" << std::showbase << std::hex << ctxt->fFlags;
+        oss() << "6=" << std::showbase << std::hex << address;
     }
 
 // return object if successful, lament if not
@@ -162,12 +187,16 @@ PyObject* CPyCppyy::CPPConstructor::Call(CPPInstance*& self,
     // done with self
         Py_DECREF(self);
 
+        oss() << "7=scope=" << GetScope() << ": "; // The ostream operator << is overloaded for void* to print the address
+
         Py_RETURN_NONE;                     // by definition
     }
 
-    if (!PyErr_Occurred())   // should be set, otherwise write a generic error msg
+    if (!PyErr_Occurred()) {  // should be set, otherwise write a generic error msg
+        oss() << "8=scope=" << GetScope() << ": "; // The ostream operator << is overloaded for void* to print the address
         PyErr_SetString(PyExc_TypeError, const_cast<char*>(
-            (Cppyy::GetScopedFinalName(GetScope()) + " constructor failed").c_str()));
+            (oss.s.str() + Cppyy::GetScopedFinalName(GetScope()) + " constructor failed").c_str()));
+    }
 
 // do not throw an exception, nullptr might trigger the overload handler to
 // choose a different constructor, which if all fails will throw an exception
@@ -376,3 +405,5 @@ PyObject* CPyCppyy::CPPAllPrivateClassConstructor::Call(
         Cppyy::GetScopedFinalName(this->GetScope()).c_str());
     return nullptr;
 }
+
+// clang-format on

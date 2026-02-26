@@ -1,3 +1,4 @@
+// clang-format off
 // Bindings
 #include "CPyCppyy.h"
 #include "CPPMethod.h"
@@ -255,9 +256,11 @@ bool CPyCppyy::CPPMethod::InitConverters_()
 bool CPyCppyy::CPPMethod::InitExecutor_(Executor*& executor, CallContext* /* ctxt */)
 {
 // install executor conform to the return type
+    if(!executor) {
     executor = 
         (bool)fMethod == true ? CreateExecutor(Cppyy::GetMethodReturnType(fMethod)) \
                               : CreateExecutor(Cppyy::GetScopedFinalName(fScope));
+    }
 
     if (!executor)
         return false;
@@ -1124,3 +1127,5 @@ std::string CPyCppyy::CPPMethod::GetReturnTypeName()
 {
     return Cppyy::GetMethodReturnTypeAsString(fMethod);
 }
+
+// clang-format on
