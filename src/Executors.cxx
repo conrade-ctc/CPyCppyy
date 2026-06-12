@@ -1120,10 +1120,10 @@ public:
         gf["char32_t"] =                    (ef_t)+[](cdims_t) { static Char32Executor e{};        return &e; };
         gf["int8_t"] =                      (ef_t)+[](cdims_t) { static Int8Executor e{};          return &e; };
         gf["int8_t&"] =                     (ef_t)+[](cdims_t) { return new Int8RefExecutor{}; };
-        gf["const int8_t&"] =               (ef_t)+[](cdims_t) { static Int8RefExecutor e{};       return &e; };
+        gf["const int8_t&"] =               (ef_t)+[](cdims_t) { return new Int8RefExecutor{}; };
         gf["uint8_t"] =                     (ef_t)+[](cdims_t) { static UInt8Executor e{};         return &e; };
         gf["uint8_t&"] =                    (ef_t)+[](cdims_t) { return new UInt8RefExecutor{}; };
-        gf["const uint8_t&"] =              (ef_t)+[](cdims_t) { static UInt8RefExecutor e{};      return &e; };
+        gf["const uint8_t&"] =              (ef_t)+[](cdims_t) { return new UInt8RefExecutor{}; };
         gf["short"] =                       (ef_t)+[](cdims_t) { static ShortExecutor e{};         return &e; };
         gf["short&"] =                      (ef_t)+[](cdims_t) { return new ShortRefExecutor{}; };
         gf["int"] =                         (ef_t)+[](cdims_t) { static IntExecutor e{};           return &e; };
