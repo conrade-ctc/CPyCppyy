@@ -19,6 +19,26 @@ are differences due to the former being reference counted and the latter
 being garbage collected, as well as temporary differences due to different
 release cycles of the respective projects.
 
+Building with Bazel (experimental)
+----------------------------------
+
+CMake is the supported build. A best-effort, non-gating Bazel build is also
+provided for the extension module (``libcppyy.so``).
+
+It expects a sibling checkout layout so the shared ``cppyy_bazel`` module and
+the ``CppInterOp`` dependency resolve::
+
+    <parent>/CPyCppyy
+    <parent>/cppyy        # provides cppyy/bazel
+    <parent>/CppInterOp
+
+Point ``LLVM_DIR`` at an LLVM build or install tree (one exposing
+``bin/llvm-config``, ``lib/``, ``include/``), then build::
+
+    LLVM_DIR=/path/to/llvm bazelisk build //:solib
+
+The output is ``bazel-bin/libcppyy.so``.
+
 ----
 
 Find the cppyy documentation here:

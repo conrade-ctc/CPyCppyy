@@ -1,0 +1,60 @@
+# Best-effort, NON-GATING Bazel build of the CPyCppyy extension module.
+# CMake remains the supported build; this job never gates CI: it is marked
+# continue-on-error and every step swallows failure into a warning.
+name: bazel
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  bazel:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      # Override to match the LLVM tree the stack expects.
+      LLVM_VERSION: "21.1.0"
+    steps:
+      - name: Checkout CPyCppyy
+        uses: actions/checkout@v4
+        with:
+          path: CPyCppyy
+
+      # Sibling layout so ../cppyy/bazel and ../CppInterOp resolve.
+      - name: Checkout cppyy
+        uses: actions/checkout@v4
+        with:
+          repository: compiler-research/cppyy
+          path: cppyy
+
+      - name: Checkout CppInterOp
+        uses: actions/checkout@v4
+        with:
+          repository: compiler-research/CppInterOp
+          path: CppInterOp
+
+      - name: Install bazelisk
+        run: |
+          curl -fsSL -o /usr/local/bin/bazelisk \
+            https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 \
+            && chmod +x /usr/local/bin/bazelisk \
+            || echo "::warning::bazelisk install failed"
+
+      - name: Download LLVM release
+        run: |
+          set -x
+          url="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
+          mkdir -p "$HOME/llvm" \
+            && curl -fsSL "$url" | tar -xJ -C "$HOME/llvm" --strip-components=1 \
+            && echo "LLVM_DIR=$HOME/llvm" >> "$GITHUB_ENV" \
+            || echo "::warning::LLVM download/extract failed; Bazel build will be skipped"
+
+      - name: Bazel build //:solib
+        working-directory: CPyCppyy
+        run: |
+          if [ -z "$LLVM_DIR" ]; then
+            echo "::warning::LLVM_DIR unset; skipping bazel build"
+            exit 0
+          fi
+          bazelisk build //:solib || echo "::warning::bazel build //:solib failed"
