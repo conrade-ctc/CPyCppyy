@@ -1,4 +1,5 @@
 load("@cppyy_bazel//:defs.bzl", "BASE_COPTS")
+load("@@rules_cc+//cc:defs.bzl", "cc_library", "cc_shared_library")
 
 # The cppyy stack is a sanitizer boundary: libcppyy.so is dlopen'd by a
 # (possibly non-instrumented) host interpreter and works directly with the
